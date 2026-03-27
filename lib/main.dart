@@ -1,234 +1,197 @@
 import 'package:flutter/material.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(GoalTrackerApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
-
+class GoalTrackerApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: const Color(0xFF121212),
-        cardColor: const Color(0xFF1E1E1E),
+      title: 'Goal Tracker',
+      theme: ThemeData(
+        primarySwatch: Colors.deepPurple,
       ),
-      home: const TaskApp(),
+      home: GoalHomePage(),
     );
   }
 }
 
-class TaskApp extends StatefulWidget {
-  const TaskApp({super.key});
-
+class GoalHomePage extends StatefulWidget {
   @override
-  State<TaskApp> createState() => _TaskAppState();
+  _GoalHomePageState createState() => _GoalHomePageState();
 }
 
-class _TaskAppState extends State<TaskApp> {
-  List<Map<String, dynamic>> tasks = [];
-  TextEditingController controller = TextEditingController();
+class _GoalHomePageState extends State<GoalHomePage> {
+  List<Map<String, dynamic>> goals = [];
 
-  DateTime? selectedDate;
-  TimeOfDay? selectedTime;
+  TextEditingController goalController = TextEditingController();
 
-  void pickDate() async {
-    DateTime? picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime.now(),
-      firstDate: DateTime(2024),
-      lastDate: DateTime(2100),
-    );
-
-    if (picked != null) {
-      setState(() => selectedDate = picked);
-    }
-  }
-
-  void pickTime() async {
-    TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-
-    if (picked != null) {
-      setState(() => selectedTime = picked);
-    }
-  }
-
-  void addTask() {
-    if (controller.text.isEmpty) return;
+  void addGoal() {
+    if (goalController.text.isEmpty) return;
 
     setState(() {
-      tasks.add({
-        "title": controller.text,
-        "done": false,
-        "date": selectedDate,
-        "time": selectedTime,
+      goals.add({
+        "title": goalController.text,
+        "count": 0,
+        "target": 10,
+        "completed": false,
       });
     });
 
-    controller.clear();
-    selectedDate = null;
-    selectedTime = null;
+    goalController.clear();
   }
 
-  void toggleTask(int index) {
+  void incrementGoal(int index) {
     setState(() {
-      tasks[index]["done"] = !tasks[index]["done"];
+      goals[index]["count"]++;
+
+      if (goals[index]["count"] >= goals[index]["target"]) {
+        goals[index]["completed"] = true;
+      }
     });
   }
 
-  void deleteTask(int index) {
+  void deleteGoal(int index) {
     setState(() {
-      tasks.removeAt(index);
+      goals.removeAt(index);
     });
   }
 
-  String formatDateTime(DateTime? date, TimeOfDay? time) {
-    if (date == null) return "No deadline";
-
-    String d = "${date.day}/${date.month}/${date.year}";
-
-    if (time == null) return d;
-
-    final now = DateTime.now();
-    final dt = DateTime(now.year, now.month, now.day, time.hour, time.minute);
-
-    String t = TimeOfDay.fromDateTime(dt).format(context);
-
-    return "$d • $t";
+  double getProgress(int index) {
+    return goals[index]["count"] / goals[index]["target"];
   }
 
   @override
   Widget build(BuildContext context) {
-    int completed = tasks.where((t) => t["done"]).length;
-    double progress = tasks.isEmpty ? 0 : completed / tasks.length;
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Personal Goals Manager",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: Text("My Goals"),
         centerTitle: true,
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 10),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: LinearProgressIndicator(value: progress, minHeight: 8),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple.shade200, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-
-          const SizedBox(height: 15),
-
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: controller,
-                        decoration: InputDecoration(
-                          hintText: "Enter your goal...",
-                          filled: true,
-                          fillColor: const Color(0xFF1E1E1E),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+        ),
+        child: Column(
+          children: [
+            // INPUT
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: goalController,
+                      decoration: InputDecoration(
+                        hintText: "Enter goal",
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    ElevatedButton(
-                      onPressed: addTask,
-                      child: const Text("Add"),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 10),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: pickDate,
-                        child: Text(
-                          selectedDate == null
-                              ? "Pick Date"
-                              : "${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}",
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: pickTime,
-                        child: Text(
-                          selectedTime == null
-                              ? "Pick Time"
-                              : selectedTime!.format(context),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                  ),
+                  SizedBox(width: 10),
+                  ElevatedButton(
+                    onPressed: addGoal,
+                    child: Text("Add"),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          Expanded(
-            child: tasks.isEmpty
-                ? const Center(child: Text("No goals added yet 🚀"))
-                : ListView.builder(
-                    itemCount: tasks.length,
-                    itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        child: Card(
+            // LIST
+            Expanded(
+              child: goals.isEmpty
+                  ? Center(child: Text("No Goals Yet 😴"))
+                  : ListView.builder(
+                      itemCount: goals.length,
+                      itemBuilder: (context, index) {
+                        return Card(
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(15),
                           ),
-                          child: ListTile(
-                            title: Text(
-                              tasks[index]["title"],
-                              style: TextStyle(
-                                decoration: tasks[index]["done"]
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                              ),
-                            ),
-                            subtitle: Text(
-                              formatDateTime(
-                                tasks[index]["date"],
-                                tasks[index]["time"],
-                              ),
-                            ),
-                            leading: Checkbox(
-                              value: tasks[index]["done"],
-                              onChanged: (_) => toggleTask(index),
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () => deleteTask(index),
+                          margin: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          elevation: 5,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // TITLE
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      goals[index]["title"],
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold,
+                                        decoration: goals[index]["completed"]
+                                            ? TextDecoration.lineThrough
+                                            : TextDecoration.none,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete,
+                                          color: Colors.red),
+                                      onPressed: () => deleteGoal(index),
+                                    )
+                                  ],
+                                ),
+
+                                SizedBox(height: 5),
+
+                                // PROGRESS TEXT
+                                Text(
+                                    "Progress: ${goals[index]["count"]}/${goals[index]["target"]}"),
+
+                                SizedBox(height: 5),
+
+                                // PROGRESS BAR
+                                LinearProgressIndicator(
+                                  value: getProgress(index),
+                                  minHeight: 8,
+                                ),
+
+                                SizedBox(height: 8),
+
+                                // BUTTON
+                                Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    ElevatedButton(
+                                      onPressed: goals[index]["completed"]
+                                          ? null
+                                          : () => incrementGoal(index),
+                                      child: Text("Increase"),
+                                    ),
+                                    if (goals[index]["completed"])
+                                      Text("Completed 🎉",
+                                          style: TextStyle(
+                                              color: Colors.green,
+                                              fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
